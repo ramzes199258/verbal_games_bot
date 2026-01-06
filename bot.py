@@ -8,6 +8,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.exceptions import TelegramAPIError
+from aiohttp import web
+import asyncio
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO)
@@ -17,10 +19,6 @@ load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     logging.error("❌ BOT_TOKEN не установлен в переменных окружения Scalingo!")
-    exit(1)
-        
-if not BOT_TOKEN:
-    logging.error("❌ Токен не найден в .env файле!")
     exit(1)
 
 # Инициализация бота
@@ -123,9 +121,33 @@ async def handle_choice(callback: types.CallbackQuery, state: FSMContext):
 async def fallback(message: types.Message):
     await message.answer("🎮 Начните игру командой /start")
 
+async def handle_webhook(request):
+    """Обработчик вебхуков от Telegram"""
+    if request.match_info.get('token') != BOT_TOKEN:
+        return web.Response(status=403)
+    
+    update = types.Update(**await request.json())
+    await dp.feed_update(bot, update)
+    return web.Response()
+
+async def on_startup(app):
+    """Настройка вебхука при запуске"""
+    webhook_url = f"{os.getenv('APP_URL', '')}/webhook/{BOT_TOKEN}"
+    await bot.set_webhook(webhook_url)
+    logging.info(f"✅ Вебхук установлен: {webhook_url}")
+
 if __name__ == "__main__":
-    if load_quest():
-        logging.info("🚀 Бот запускается с поддержкой изображений...")
-        dp.run_polling(bot)
-    else:
+    if not load_quest():
         logging.error("🛑 Запуск отменён из-за ошибок в квесте.")
+        exit(1)
+    
+    logging.info("🚀 Запуск бота в режиме вебхуков...")
+    
+    # Создаём aiohttp приложение
+    app = web.Application()
+    app.on_startup.append(on_startup)
+    app.router.add_post(f"/webhook/{BOT_TOKEN}", handle_webhook)
+    
+    # Запускаем сервер на порту из окружения
+    port = int(os.getenv("PORT", 8000))
+    web.run_app(app, host="0.0.0.0", port=port)
