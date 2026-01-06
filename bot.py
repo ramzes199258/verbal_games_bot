@@ -15,11 +15,9 @@ logging.basicConfig(level=logging.INFO)
 # Загрузка переменных окружения
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-if __name__ == "__main__":
-    print(f"🔍 DEBUG: BOT_TOKEN = {BOT_TOKEN[:5]}...")  # Выведет первые 5 символов
-    if not BOT_TOKEN:
-        logging.error("❌ BOT_TOKEN не установлен в переменных окружения!")
-        exit(1)
+if not BOT_TOKEN:
+    logging.error("❌ BOT_TOKEN не установлен в переменных окружения Scalingo!")
+    exit(1)
         
 if not BOT_TOKEN:
     logging.error("❌ Токен не найден в .env файле!")
