@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 
 # Загрузка переменных окружения
 load_dotenv()
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = "8048162931:AAFr4yGELPzIDo9Tpf6WtMORXIC2efvaT-Y"
 
 if not BOT_TOKEN:
     logging.error("❌ Токен не найден в .env файле!")
